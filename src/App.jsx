@@ -10,10 +10,10 @@ import { TbLoader2 } from "react-icons/tb";
 
 const App = () => {
   const {
-    // isAuthenticated,
+    isAuthenticated,
     isLoading,
   } = useAuth();
-  const isAuthenticated = true;
+  // const isAuthenticated = true;
   // const isLoading = true
 
   if (isLoading) {
