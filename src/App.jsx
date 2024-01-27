@@ -53,3 +53,21 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
+git pull origin main    # fetch and merge changes from the remote repository
+# make changes to files
+git add .                    # add all modified files to the staging area
+git commit -m "isAuthenticated 27-Jan-2024"  # commit changes with a descriptive message
+git push origin main         # push changes to the remote repository on Github
