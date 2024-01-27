@@ -1,0 +1,87 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: none;
+  text-decoration: none;
+  list-style: none;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background: #151618;
+  min-height: 100dvh;
+  color: #ffffff;
+  width: 100%;
+  margin: auto;
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+  margin: auto;
+}
+
+.transition {
+  transition: all 0.2s ease-in-out;
+}
+input[type="checkbox"] {
+  accent-color: #4cd137;
+  width: 4.2vw;
+  height: 4.2vw;
+  border: 0;
+}
+p{
+  word-break: keep-all;
+}
+/* ------------------ProgressBar-------------- */
+.progress-ring__circle {
+  stroke-dasharray: 400, 400;
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  z-index: 10;
+}
+/* ------------------ProgressBar-------------- */
+
+/* TabSwipe.css */
+.tab-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.tab-content {
+  display: flex;
+  transition: transform 0.3s ease-in-out;
+}
+
+.show-actions {
+  transform: translateX(-100%);
+}
+
+.tab-content-inner {
+  flex: 1;
+  padding: 16px;
+  background-color: #f2f2f2;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.edit-button,
+.delete-button {
+  padding: 8px;
+  margin-right: 8px;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
