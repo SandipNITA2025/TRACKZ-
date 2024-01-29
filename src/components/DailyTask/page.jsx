@@ -79,20 +79,22 @@ const DailyTask = () => {
     // console.log(dataFetched)
     // Check if the saved date is different from the current date
 
-    if (savedDate !== currentDate && primaryTasks <= 0) {
-      axios
-        .post(`${BASE_URL}/api/createDailyTask`, {
-          user_email: user?.email,
-          date: currentDate,
-        })
-        .then((response) => {
-          // console.log(response.data);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+    if (primaryTasks > 0) {
+      if (savedDate !== currentDate && primaryTasks <= 0) {
+        axios
+          .post(`${BASE_URL}/api/createDailyTask`, {
+            user_email: user?.email,
+            date: currentDate,
+          })
+          .then((response) => {
+            // console.log(response.data);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
 
-      saveNewDate();
+        saveNewDate();
+      }
     }
   }, [currentDate, user?.email]);
   // --------------- POST API----------------
