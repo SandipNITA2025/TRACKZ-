@@ -50,7 +50,7 @@ const Navbar = () => {
     };
   }, [navRef]);
 
-    console.log(user?.reloadUserInfo?.photoUrl);
+    console.log(user?.email);
   return (
     <div className=" top-0 bg-[#151618] px-4 p-[5vw] w-full flex items-center justify-between z-[100]">
       <Link to="/" className="left flex items-center justify-center gap-2">

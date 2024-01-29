@@ -1,57 +1,117 @@
-// import React from "react";
-import { useRef, useState } from "react";
+import React from "react";
+import { useEffect, useRef, useState } from "react";
 import { RiTaskLine } from "react-icons/ri";
 import { MdModeEdit } from "react-icons/md";
 import { MdDelete } from "react-icons/md";
 import { FiPlus } from "react-icons/fi";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import { BASE_URL } from "../../api/BASE_URL";
+import { useAuth } from "../../context/authContext";
+import axios from "axios";
 
-const tabs = [
-  {
-    id: "1",
-    author: "John Doe",
-  },
-  {
-    id: "2",
-    author: "Jane Smith",
-  },
-  {
-    id: "3",
-    author: "Michael Johnson",
-  },
-  {
-    id: "4",
-    author: "Emily Davis",
-  },
-  {
-    id: "5",
-    author: "Robert Wilson",
-  },
-  {
-    id: "6",
-    author: "Learn new Skills/Concepts - related to programming",
-  },
-  {
-    id: "7",
-    author: "David Taylor",
-  },
-  {
-    id: "8",
-    author: "Jennifer Anderson",
-  },
-  {
-    id: "9",
-    author: "Daniel Martinez",
-  },
-  {
-    id: "10",
-    author: "Jessica Thomas",
-  },
-];
+import { CircularProgressbar } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+
+const tabs = [];
 
 const DailyTask = () => {
   const [showActions, setShowActions] = useState({});
   const [contentLeft, setContentLeft] = useState({});
   const touchStartX = useRef({});
+  const { user } = useAuth();
+
+  const [primaryTasks, setPrimaryTasks] = useState(null);
+
+  // const queryClient = useQueryClient();
+
+  function getCurrentDate() {
+    // Function to get the current date in "YYYY-MM-DD" format
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, "0");
+    const day = today.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  const currentDate = getCurrentDate();
+
+  // ----------------GET API-----------------
+
+  const {
+    data: getDailyTasks,
+    isLoading,
+    refetch,
+  } = useQuery(["getDailyTasks", user?.email, currentDate], async () => {
+    const res = await axios.get(
+      `${BASE_URL}/api/getDailyTasks/${user?.email}/${currentDate}`
+    );
+    return res.data;
+  });
+
+  // console.log(getDailyTasks?.dailyTask?.task_lists?.length);
+  // ----------------GET API-----------------
+
+  // --------------- POST API----------------
+
+  // Example usage
+  const saveNewDate = () => {
+    localStorage.setItem("saveddate", currentDate);
+  };
+
+  // Effect to handle the API call when the date changes
+
+  useEffect(() => {
+    const savedDate = localStorage.getItem("saveddate");
+    // console.log(savedDate);
+
+    const fetchData = async () => {
+      const res = await axios.get(
+        `${BASE_URL}/api/getContantTask/${user?.email}`
+      );
+      console.log(res?.data?.task_names?.length);
+      setPrimaryTasks(res?.data?.task_names?.length);
+
+      // dataFetched(res?.data)
+      // return res.data;
+    };
+    fetchData();
+
+    // console.log(dataFetched)
+    // Check if the saved date is different from the current date
+
+    if (savedDate !== currentDate && primaryTasks <= 0) {
+      axios
+        .post(`${BASE_URL}/api/createDailyTask`, {
+          user_email: user?.email,
+          date: currentDate,
+        })
+        .then((response) => {
+          // console.log(response.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+
+      saveNewDate();
+    }
+  }, [currentDate, user?.email]);
+  // --------------- POST API----------------
+
+  // ---------------- PUT API TO UPADTE isCompleted filed---------------
+  const handleStatusUpdate = async (id, value) => {
+    const res = await axios.put(
+      `${BASE_URL}/api/updateTask/${id}?date=${currentDate}&user_email=${user?.email}`,
+      {
+        isCompleted: value,
+      }
+    );
+
+    if (res.status === 200) {
+      await refetch();
+      // console.log(res.status);
+    }
+  };
+  // ---------------- PUT API TO UPADTE isCompleted filed---------------
 
   const handleTouchStart = (tabId, e) => {
     touchStartX.current[tabId] = e.touches[0].clientX;
@@ -82,6 +142,20 @@ const DailyTask = () => {
     touchStartX.current[tabId] = null;
   };
 
+  // -------------percentage-------------------
+  // console.log(getDailyTasks?.dailyTask?.task_lists?.length || 0);
+  const Totalcount = getDailyTasks?.dailyTask?.task_lists?.length || 0;
+  const completed = getDailyTasks?.noOfCompletedTasks;
+  // console.log(completed)
+  // Replace this with your actual completed count
+
+  // Calculate the completion percentage
+  const completionPercentage = (completed / Totalcount) * 100;
+
+  // console.log(completionPercentage);
+
+  // -------------percentage-------------------
+
   return (
     <div className="mt-[1vw] p-[1vw]">
       {/* --------- task container-------- */}
@@ -99,30 +173,21 @@ const DailyTask = () => {
             {" "}
             {/* ----------progress circle--------- */}
             <div className="relative w-[9.5vw] h-[9.5vw]">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                {/* <!-- Background circle --> */}
-                <circle
-                  className="text-gray-200 stroke-current"
-                  strokeWidth="10"
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                ></circle>
-                {/* <!-- Progress circle --> */}
-                <circle
-                  className="text-green-500  progress-ring__circle stroke-current"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                  strokeDashoffset="calc(400 - (400 * 45) / 100)"
-                ></circle>
-              </svg>
+              <CircularProgressbar
+                styles={{
+                  // Customize the root svg element
+                  root: {},
+                  // Customize the path, i.e. the "completed progress"
+                  path: {
+                    // Path color
+                    stroke: `rgba(76, 209, 55, ${completionPercentage})`,
+                  },
+                }}
+                value={completionPercentage}
+              />
+
               <p className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] text-gray-200 text-[2vw] font-medium text-center">
-                100%
+                {completionPercentage}%
               </p>
             </div>
             {/* ----------progress circle--------- */}
@@ -136,14 +201,14 @@ const DailyTask = () => {
         <div className=" mt-[-.2vw] task-warpper flex flex-col px-[3vw] w-full min-h-full relative">
           {/* ---------------- swipe tabs------------- */}
 
-          {tabs?.length > 0 ? (
+          {getDailyTasks?.dailyTask?.task_lists?.length > 0 ? (
             <>
-              {tabs?.map((tab, index) => (
+              {getDailyTasks?.dailyTask?.task_lists?.map((tab, index) => (
                 <div
-                  key={tab.id}
-                  onTouchStart={(e) => handleTouchStart(tab?.id, e)}
-                  onTouchMove={(e) => handleTouchMove(tab?.id, e)}
-                  onTouchEnd={() => handleTouchEnd(tab.id)}
+                  key={tab?._id}
+                  onTouchStart={(e) => handleTouchStart(tab?._id, e)}
+                  onTouchMove={(e) => handleTouchMove(tab?._id, e)}
+                  onTouchEnd={() => handleTouchEnd(tab?._id)}
                   style={{
                     position: "relative",
                     marginBottom: "14vw", // Adjust the spacing between tabs
@@ -154,7 +219,7 @@ const DailyTask = () => {
                     <div
                       style={{
                         position: "absolute",
-                        left: `${contentLeft[tab.id]}px`,
+                        left: `${contentLeft[tab?._id]}px`,
                         transition: "left 0.3s ease",
                         width: "100%", // Optional: Add a smooth transition
                       }}
@@ -162,23 +227,39 @@ const DailyTask = () => {
                     >
                       <div className=" p-[2vw] py-[3.8vw]  flex items-center gap-[2vw]">
                         {/* Your tab content goes here */}
-                        <input type="checkbox" name="" id="" />
+                        <input
+                          onChange={() =>
+                            handleStatusUpdate(
+                              tab?._id,
+                              tab?.isCompleted === false ? true : false
+                            )
+                          }
+                          type="checkbox"
+                          checked={tab?.isCompleted === true}
+                          name=""
+                          id=""
+                        />
+                        {tab?.isCompleted}
                         <span>{index + 1}. </span>
-                        <p className="w-[75vw] overflow-hidden h-[6vw]">
-                          {tab.author}
+                        <p
+                          className={`w-[75vw] overflow-hidden h-[6vw] ${
+                            tab?.isCompleted ? "line-through text-gray-500" : ""
+                          }`}
+                        >
+                          {tab?.name}
                         </p>
                       </div>
                     </div>
 
-                    {showActions[tab?.id] && (
+                    {showActions[tab?._id] && (
                       <div className="absolute right-0 flex items-center justify-center gap-3 h-[12.8vw] px-[4vw] rounded-md">
                         <button
-                          onClick={() => console.log(`Edit Tab ${tab.id}`)}
+                          onClick={() => console.log(`Edit Tab ${tab?._id}`)}
                         >
                           <MdModeEdit className=" text-[4.6vw]" />
                         </button>
                         <button
-                          onClick={() => console.log(`Delete Tab ${tab.id}`)}
+                          onClick={() => console.log(`Delete Tab ${tab?._id}`)}
                         >
                           <MdDelete className=" text-[4.6vw]" />
                         </button>
