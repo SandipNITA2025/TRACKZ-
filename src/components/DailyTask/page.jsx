@@ -80,7 +80,7 @@ const DailyTask = () => {
     // Check if the saved date is different from the current date
 
     if (primaryTasks > 0) {
-      if (savedDate !== currentDate && primaryTasks <= 0) {
+      if (savedDate !== currentDate) {
         axios
           .post(`${BASE_URL}/api/createDailyTask`, {
             user_email: user?.email,
