@@ -8,6 +8,7 @@ import axios from "axios";
 import { debounce } from "lodash";
 import { useAuth } from "../../context/authContext";
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useForm, Controller } from "react-hook-form";
 
 const Task = () => {
   const [isModelOpen, setIsModelOpen] = useState(false);
@@ -19,10 +20,11 @@ const Task = () => {
   const touchStartX = useRef({});
   const modelRef = useRef();
   const { user } = useAuth();
+  const { handleSubmit, control, setValue } = useForm();
 
   const queryClient = useQueryClient();
 
-  const handleInputChange = debounce((newInputs, oldInputs, { queryKey }) => {
+  const handleInputChange = debounce((newInputs, oldInputs) => {
     // Only refetch data if the 'user?.email' value has changed
     if (newInputs[1] !== oldInputs[1]) {
       queryClient.invalidateQueries(["tasks", user?.email]);
@@ -35,6 +37,7 @@ const Task = () => {
       const res = await axios.get(
         `${BASE_URL}/api/getContantTask/${user?.email}`
       );
+      // console.log(res.data);
       return res.data;
     },
     {
@@ -99,10 +102,10 @@ const Task = () => {
     setIsEditing(true);
   };
 
-  const handleUpdateTask = async () => {
+  const handleUpdateTask = async (formData) => {
     try {
       await updateTaskMutation.mutateAsync({
-        name: taskNames[0],
+        name: formData.taskNames[0],
       });
     } catch (error) {
       console.error(error);
@@ -117,11 +120,12 @@ const Task = () => {
     }
   };
 
-  const handleCreateTask = async () => {
+  const handleCreateTask = async (formData) => {
+    console.log(formData);
     try {
       await createTaskMutation.mutateAsync({
         user_email: user?.email,
-        task_names: taskNames,
+        task_names: formData.taskNames,
       });
     } catch (error) {
       console.error(error);
@@ -327,20 +331,33 @@ const Task = () => {
         }  fixed top-0 left-0 h-screen w-[100vw] z-[10000000] backdrop-blur-sm  items-center justify-center`}
       >
         <form
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={handleSubmit(
+            isEditing ? handleUpdateTask : handleCreateTask
+          )}
           ref={modelRef}
           className="bg-[#2a2c2f] border border-white/10 w-[90vw] flex flex-col rounded-[3vw] p-[6vw] gap-3"
         >
           <p className=" text-start text-[5.5vw] font-semibold">
             {isEditing ? "Edit Task" : "Add Primary Task"}
           </p>
-          <input
-            type="text"
-            className="bg-transparent border rounded-[1vw] w-full p-[1.8vw]"
-            placeholder="1. Task Name..."
-            value={taskNames}
-            onChange={(e) => setTaskNames(e.target.value.split(","))}
+          <Controller
+            name="taskNames"
+            control={control}
+            defaultValue={isEditing ? taskNames : ""}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                className="bg-transparent border rounded-[1vw] w-full p-[1.8vw]"
+                placeholder="1. Task Name..."
+                onChange={(e) => {
+                  setTaskNames(e.target.value.split(","));
+                  setValue("taskNames", e.target.value.split(","));
+                }}
+              />
+            )}
           />
+
           <div className="btns flex w-full justify-end gap-3">
             <div
               onClick={() => setIsModelOpen(false)}

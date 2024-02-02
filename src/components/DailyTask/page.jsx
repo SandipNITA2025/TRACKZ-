@@ -79,6 +79,8 @@ const DailyTask = () => {
     // console.log(dataFetched)
     // Check if the saved date is different from the current date
 
+    console.log(primaryTasks)
+
     if (primaryTasks > 0) {
       if (savedDate !== currentDate) {
         axios
