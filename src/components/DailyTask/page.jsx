@@ -89,7 +89,7 @@ const DailyTask = () => {
             date: currentDate,
           })
           .then((response) => {
-            // console.log(response.data);
+            console.log(response.data);
           })
           .catch((error) => {
             console.log(error);
@@ -98,7 +98,7 @@ const DailyTask = () => {
         saveNewDate();
       }
     }
-  }, [currentDate, user?.email]);
+  }, [currentDate, user?.email, primaryTasks]);
   // --------------- POST API----------------
 
   // ---------------- PUT API TO UPADTE isCompleted filed---------------
