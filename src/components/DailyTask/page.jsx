@@ -38,6 +38,18 @@ const DailyTask = () => {
 
   const currentDate = getCurrentDate();
 
+  // Example usage
+  const saveNewDate = () => {
+    localStorage.setItem("saveddate", currentDate);
+  };
+  const savedDate = localStorage.getItem("saveddate");
+
+  const saveEmail = () => {
+    localStorage.setItem("saveemail", user?.email);
+  };
+
+  const savedEmail = localStorage.getItem("saveemail");
+  console.log(savedEmail);
   // ----------------GET API-----------------
 
   const {
@@ -48,6 +60,10 @@ const DailyTask = () => {
     const res = await axios.get(
       `${BASE_URL}/api/getDailyTasks/${user?.email}/${currentDate}`
     );
+    if (res.data?.dailyTask?.task_lists?.length > 0) {
+      saveNewDate();
+      saveEmail();
+    }
     return res.data;
   });
 
@@ -55,12 +71,6 @@ const DailyTask = () => {
   // ----------------GET API-----------------
 
   // --------------- POST API----------------
-
-  // Example usage
-  const saveNewDate = () => {
-    localStorage.setItem("saveddate", currentDate);
-  };
-  const savedDate = localStorage.getItem("saveddate");
 
   // Effect to handle the API call when the date changes
 
@@ -80,13 +90,18 @@ const DailyTask = () => {
     fetchData();
 
     const updateDailyTask = async () => {
-      if (primaryTasks > 0 && savedDate != currentDate) {
+      if (
+        primaryTasks > 0 &&
+        savedDate != currentDate &&
+        savedEmail != user?.email
+      ) {
         try {
           await axios.post(`${BASE_URL}/api/createDailyTask`, {
             user_email: user?.email,
             date: currentDate,
           });
           saveNewDate();
+          saveEmail();
         } catch (error) {
           console.error("Error creating daily task:", error);
         }
@@ -94,7 +109,7 @@ const DailyTask = () => {
     };
 
     updateDailyTask();
-  }, [currentDate, user?.email, primaryTasks]);
+  }, [currentDate, user?.email, primaryTasks, savedEmail]);
 
   // --------------- POST API----------------
 
@@ -195,6 +210,22 @@ const DailyTask = () => {
   };
   // ------------------- DELETE API-------------------------
 
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (modelRef.current && !modelRef.current.contains(event.target)) {
+        setIsModelOpen(false);
+        setIsEditing(false);
+        setTaskNames("");
+      }
+    };
+
+    window.addEventListener("mousedown", handleOutsideClick);
+
+    return () => {
+      window.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [modelRef]);
+
   const handleTouchStart = (tabId, e) => {
     touchStartX.current[tabId] = e.touches[0].clientX;
   };
@@ -234,6 +265,16 @@ const DailyTask = () => {
   // Calculate the completion percentage
   const completionPercentage = ((completed / Totalcount) * 100).toFixed(0);
 
+  // Define color based on completionPercentage
+  let pathColor;
+  if (completionPercentage <= 33.3) {
+    pathColor = "rgb(239 68 68)";
+  } else if (completionPercentage <= 66.6) {
+    pathColor = "rgb(234 179 8)";
+  } else {
+    pathColor = "rgb(34 197 94)";
+  }
+
   // console.log(completionPercentage);
 
   // -------------percentage-------------------
@@ -241,7 +282,7 @@ const DailyTask = () => {
   return (
     <div className="mt-[1vw] p-[1vw]">
       {/* --------- task container-------- */}
-      <div className="task-container mt-[6vw] w-full border border-[#2a2c2f] rounded-[3vw] overflow-hidden min-h-[125vw] max-h-[138vw] overflow-y-auto relative">
+      <div className="task-container mt-[6vw] w-full border border-[#2a2c2f] rounded-[3vw] overflow-hidden min-h-[140vw] max-h-[140vw] overflow-y-auto relative">
         <div className=" sticky top-0 left-0 z-[5] taskbar h-[15vw] bg-[#1f2123] w-full flex items-center justify-between px-[4vw]">
           {/* ---------------heading------------ */}
           <div className="left">
@@ -262,7 +303,7 @@ const DailyTask = () => {
                   // Customize the path, i.e. the "completed progress"
                   path: {
                     // Path color
-                    stroke: `rgba(76, 209, 55, ${completionPercentage})`,
+                    stroke: pathColor,
                   },
                 }}
                 value={completionPercentage}
@@ -348,7 +389,7 @@ const DailyTask = () => {
                                 console.log(`Edit Tab ${tab?._id}`)
                               }
                             >
-                              <MdModeEdit className=" text-[4.6vw]" />
+                              {/* <MdModeEdit className=" text-[4.6vw]" /> */}
                             </button>
                             <button
                               onClick={() =>
@@ -388,8 +429,8 @@ const DailyTask = () => {
           ref={modelRef}
           className="bg-[#2a2c2f] border border-white/10 w-[90vw] flex flex-col rounded-[3vw] p-[6vw] gap-3"
         >
-          <p className=" text-start text-[5.5vw] font-semibold">
-            {isEditing ? "Edit Task" : "Add Primary Task"}
+          <p className=" text-start text-[5.2vw] font-medium">
+            {isEditing ? "Edit Task" : "Daily Task"}
           </p>
           <Controller
             name="taskNames"
@@ -400,7 +441,7 @@ const DailyTask = () => {
                 {...field}
                 type="text"
                 className="bg-transparent border rounded-[1vw] w-full p-[1.8vw]"
-                placeholder="1. Task Name..."
+                placeholder="Task Name"
                 onChange={(e) => {
                   setTaskNames(e.target.value);
                   setValue("taskNames", e.target.value.split(","));

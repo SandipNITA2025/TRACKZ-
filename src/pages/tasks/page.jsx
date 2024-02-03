@@ -228,7 +228,7 @@ const Task = () => {
     <div className="w-full mx-auto mt-[3vw] px-[3vw] max-h-screen">
       <div className="mt-[1vw] p-[1vw]">
         {/* --------- task container-------- */}
-        <div className="task-container mt-[0vw] w-full border border-[#2a2c2f] rounded-[3vw] overflow-hidden min-h-[125vw] max-h-[160vw] overflow-y-auto relative">
+        <div className="task-container mt-[0vw] w-full border border-[#2a2c2f] rounded-[3vw] overflow-hidden min-h-[165vw] max-h-[165vw] overflow-y-auto relative">
           <div className=" sticky top-0 left-0 z-[5] taskbar h-[15vw] bg-[#1f2123] w-full flex items-center justify-between px-[4vw]">
             {/* ---------------heading------------ */}
             <div className="left">
@@ -350,8 +350,8 @@ const Task = () => {
           ref={modelRef}
           className="bg-[#2a2c2f] border border-white/10 w-[90vw] flex flex-col rounded-[3vw] p-[6vw] gap-3"
         >
-          <p className=" text-start text-[5.5vw] font-semibold">
-            {isEditing ? "Edit Task" : "Add Primary Task"}
+          <p className=" text-start text-[5.2vw] font-medium">
+            {isEditing ? "Edit Task" : "Add Tasks"}
           </p>
           <Controller
             name="taskNames"
@@ -362,7 +362,7 @@ const Task = () => {
                 {...field}
                 type="text"
                 className="bg-transparent border rounded-[1vw] w-full p-[1.8vw]"
-                placeholder="1. Task Name..."
+            placeholder="Task Name"
                 onChange={(e) => {
                   setTaskNames(e.target.value.split(","));
                   setValue("taskNames", e.target.value.split(","));
