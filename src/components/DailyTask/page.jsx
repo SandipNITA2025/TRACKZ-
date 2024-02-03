@@ -23,7 +23,7 @@ const DailyTask = () => {
   const modelRef = useRef();
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [taskNames, setTaskNames] = useState([]);
+  const [taskNames, setTaskNames] = useState("");
   const { handleSubmit, control, setValue } = useForm();
   const queryClient = useQueryClient();
 
@@ -127,15 +127,18 @@ const DailyTask = () => {
         queryClient.invalidateQueries(["tasks", user?.email]);
         setIsEditing(false);
         // setEditingTaskId(null);
+        refetch();
         setIsModelOpen(false);
       },
     }
   );
 
   const handleAddTask = async (formData) => {
+    console.log(formData?.taskNames[0]);
     try {
       await addTaskMutation.mutateAsync({
-        name: formData.taskNames,
+        name: formData?.taskNames[0],
+        isCompleted: false,
       });
     } catch (error) {
       console.error(error);
@@ -156,7 +159,7 @@ const DailyTask = () => {
     }
   );
 
-  const handleCreateTask = async (formData) => {
+  const handleEditTask = async (formData) => {
     console.log(formData);
     try {
       await editTaskMutation.mutateAsync({
@@ -168,6 +171,29 @@ const DailyTask = () => {
     }
   };
   // ------------------ PUT EDIT TASK-----------------------
+
+  // ------------------- DELETE API-------------------------
+  const deleteTaskMutation = useMutation(
+    (taskId) =>
+      axios.delete(
+        `${BASE_URL}/api/deleteTask/${user?.email}/${currentDate}/${taskId}`
+      ),
+    {
+      onSuccess: () => {
+        refetch();
+        queryClient.invalidateQueries(["tasks", user?.email]);
+      },
+    }
+  );
+
+  const handleTaskDelete = async (taskId) => {
+    try {
+      await deleteTaskMutation.mutateAsync(taskId);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  // ------------------- DELETE API-------------------------
 
   const handleTouchStart = (tabId, e) => {
     touchStartX.current[tabId] = e.touches[0].clientX;
@@ -326,7 +352,8 @@ const DailyTask = () => {
                             </button>
                             <button
                               onClick={() =>
-                                console.log(`Delete Tab ${tab?._id}`)
+                                // console.log(`Delete Tab ${tab?._id}`)
+                                handleTaskDelete(tab?._id)
                               }
                             >
                               <MdDelete className=" text-[4.6vw]" />
@@ -357,7 +384,7 @@ const DailyTask = () => {
         }  fixed top-0 left-0 h-screen w-[100vw] z-[10000000] backdrop-blur-sm  items-center justify-center`}
       >
         <form
-          onSubmit={handleSubmit(isEditing ? handleAddTask : handleCreateTask)}
+          onSubmit={handleSubmit(handleAddTask)}
           ref={modelRef}
           className="bg-[#2a2c2f] border border-white/10 w-[90vw] flex flex-col rounded-[3vw] p-[6vw] gap-3"
         >
@@ -367,7 +394,7 @@ const DailyTask = () => {
           <Controller
             name="taskNames"
             control={control}
-            defaultValue={isEditing ? taskNames : ""}
+            // defaultValue={isEditing ? taskNames : ""}
             render={({ field }) => (
               <input
                 {...field}
@@ -375,7 +402,7 @@ const DailyTask = () => {
                 className="bg-transparent border rounded-[1vw] w-full p-[1.8vw]"
                 placeholder="1. Task Name..."
                 onChange={(e) => {
-                  setTaskNames(e.target.value.split(","));
+                  setTaskNames(e.target.value);
                   setValue("taskNames", e.target.value.split(","));
                 }}
               />
