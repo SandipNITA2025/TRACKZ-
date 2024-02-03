@@ -1,28 +1,31 @@
-import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { RiTaskLine } from "react-icons/ri";
 import { MdModeEdit } from "react-icons/md";
 import { MdDelete } from "react-icons/md";
 import { FiPlus } from "react-icons/fi";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { BASE_URL } from "../../api/BASE_URL";
 import { useAuth } from "../../context/authContext";
 import axios from "axios";
+import { LuLoader2 } from "react-icons/lu";
 
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
-
-const tabs = [];
+import { Controller, useForm } from "react-hook-form";
 
 const DailyTask = () => {
   const [showActions, setShowActions] = useState({});
   const [contentLeft, setContentLeft] = useState({});
   const touchStartX = useRef({});
   const { user } = useAuth();
-
   const [primaryTasks, setPrimaryTasks] = useState(null);
 
-  // const queryClient = useQueryClient();
+  const modelRef = useRef();
+  const [isModelOpen, setIsModelOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [taskNames, setTaskNames] = useState([]);
+  const { handleSubmit, control, setValue } = useForm();
+  const queryClient = useQueryClient();
 
   function getCurrentDate() {
     // Function to get the current date in "YYYY-MM-DD" format
@@ -57,48 +60,42 @@ const DailyTask = () => {
   const saveNewDate = () => {
     localStorage.setItem("saveddate", currentDate);
   };
+  const savedDate = localStorage.getItem("saveddate");
 
   // Effect to handle the API call when the date changes
 
   useEffect(() => {
-    const savedDate = localStorage.getItem("saveddate");
-    // console.log(savedDate);
-
     const fetchData = async () => {
-      const res = await axios.get(
-        `${BASE_URL}/api/getContantTask/${user?.email}`
-      );
-      console.log(res?.data?.task_names?.length);
-      setPrimaryTasks(res?.data?.task_names?.length);
-
-      // dataFetched(res?.data)
-      // return res.data;
+      try {
+        const res = await axios.get(
+          `${BASE_URL}/api/getContantTask/${user?.email}`
+        );
+        // console.log(res?.data?.task_names?.length);
+        setPrimaryTasks(res?.data?.task_names?.length);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
     };
+
     fetchData();
 
-    // console.log(dataFetched)
-    // Check if the saved date is different from the current date
-
-    console.log(primaryTasks)
-
-    if (primaryTasks > 0) {
-      if (savedDate !== currentDate) {
-        axios
-          .post(`${BASE_URL}/api/createDailyTask`, {
+    const updateDailyTask = async () => {
+      if (primaryTasks > 0 && savedDate != currentDate) {
+        try {
+          await axios.post(`${BASE_URL}/api/createDailyTask`, {
             user_email: user?.email,
             date: currentDate,
-          })
-          .then((response) => {
-            console.log(response.data);
-          })
-          .catch((error) => {
-            console.log(error);
           });
-
-        saveNewDate();
+          saveNewDate();
+        } catch (error) {
+          console.error("Error creating daily task:", error);
+        }
       }
-    }
+    };
+
+    updateDailyTask();
   }, [currentDate, user?.email, primaryTasks]);
+
   // --------------- POST API----------------
 
   // ---------------- PUT API TO UPADTE isCompleted filed---------------
@@ -116,6 +113,61 @@ const DailyTask = () => {
     }
   };
   // ---------------- PUT API TO UPADTE isCompleted filed---------------
+
+  // ---------------- PUT API TO  ADD MORE TASK--------------------
+  // console.log(currentDate)
+  const addTaskMutation = useMutation(
+    (updatedTask) =>
+      axios.put(
+        `${BASE_URL}/api/updateTask/${user?.email}/${currentDate}`,
+        updatedTask
+      ),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["tasks", user?.email]);
+        setIsEditing(false);
+        // setEditingTaskId(null);
+        setIsModelOpen(false);
+      },
+    }
+  );
+
+  const handleAddTask = async (formData) => {
+    try {
+      await addTaskMutation.mutateAsync({
+        name: formData.taskNames,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // ---------------- PUT API TO  ADD MORE TASK--------------------
+
+  // ------------------ PUT EDIT TASK-----------------------
+  const editTaskMutation = useMutation(
+    (newTask) => axios.post(`${BASE_URL}/api/create_constant_tasks`, newTask),
+    {
+      onSuccess: () => {
+        setTaskNames("");
+        setIsModelOpen(false);
+        queryClient.invalidateQueries(["tasks", user?.email]);
+      },
+    }
+  );
+
+  const handleCreateTask = async (formData) => {
+    console.log(formData);
+    try {
+      await editTaskMutation.mutateAsync({
+        user_email: user?.email,
+        task_names: formData.taskNames,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  // ------------------ PUT EDIT TASK-----------------------
 
   const handleTouchStart = (tabId, e) => {
     touchStartX.current[tabId] = e.touches[0].clientX;
@@ -154,7 +206,7 @@ const DailyTask = () => {
   // Replace this with your actual completed count
 
   // Calculate the completion percentage
-  const completionPercentage = (completed / Totalcount) * 100;
+  const completionPercentage = ((completed / Totalcount) * 100).toFixed(0);
 
   // console.log(completionPercentage);
 
@@ -191,98 +243,177 @@ const DailyTask = () => {
               />
 
               <p className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] text-gray-200 text-[2vw] font-medium text-center">
-                {completionPercentage}%
+                {completionPercentage ? completionPercentage : 0}%
               </p>
             </div>
             {/* ----------progress circle--------- */}
             {/* --------== add new task btn-------------- */}
-            <div className="btn">
+            <div onClick={() => setIsModelOpen(true)} className="btn">
               <FiPlus className=" text-[5vw] bg-[#2a2c2f] text-gray-200 rounded-[2vw] font-semibold h-[8vw] w-[8vw] p-[1.4vw]" />
             </div>
             {/* --------== add new task btn-------------- */}
           </div>
         </div>
+
         <div className=" mt-[-.2vw] task-warpper flex flex-col px-[3vw] w-full min-h-full relative">
           {/* ---------------- swipe tabs------------- */}
-
-          {getDailyTasks?.dailyTask?.task_lists?.length > 0 ? (
+          {isLoading ? (
+            <div className="w-full h-[100vw] flex items-center justify-center gap-1">
+              <LuLoader2 className="animate-spin text-xl" /> Loading...
+            </div>
+          ) : (
             <>
-              {getDailyTasks?.dailyTask?.task_lists?.map((tab, index) => (
-                <div
-                  key={tab?._id}
-                  onTouchStart={(e) => handleTouchStart(tab?._id, e)}
-                  onTouchMove={(e) => handleTouchMove(tab?._id, e)}
-                  onTouchEnd={() => handleTouchEnd(tab?._id)}
-                  style={{
-                    position: "relative",
-                    marginBottom: "14vw", // Adjust the spacing between tabs
-                  }}
-                  className="h-[100%] w-full "
-                >
-                  <div className="h-full min-h-fit border-b border-[#333537]">
+              {getDailyTasks?.dailyTask?.task_lists?.length > 0 ? (
+                <>
+                  {getDailyTasks?.dailyTask?.task_lists?.map((tab, index) => (
                     <div
+                      key={tab?._id}
+                      onTouchStart={(e) => handleTouchStart(tab?._id, e)}
+                      onTouchMove={(e) => handleTouchMove(tab?._id, e)}
+                      onTouchEnd={() => handleTouchEnd(tab?._id)}
                       style={{
-                        position: "absolute",
-                        left: `${contentLeft[tab?._id]}px`,
-                        transition: "left 0.3s ease",
-                        width: "100%", // Optional: Add a smooth transition
+                        position: "relative",
+                        marginBottom: "14vw", // Adjust the spacing between tabs
                       }}
-                      className="flex items-center"
+                      className="h-[100%] w-full "
                     >
-                      <div className=" p-[2vw] py-[3.8vw]  flex items-center gap-[2vw]">
-                        {/* Your tab content goes here */}
-                        <input
-                          onChange={() =>
-                            handleStatusUpdate(
-                              tab?._id,
-                              tab?.isCompleted === false ? true : false
-                            )
-                          }
-                          type="checkbox"
-                          checked={tab?.isCompleted === true}
-                          name=""
-                          id=""
-                        />
-                        {tab?.isCompleted}
-                        <span>{index + 1}. </span>
-                        <p
-                          className={`w-[75vw] overflow-hidden h-[6vw] ${
-                            tab?.isCompleted ? "line-through text-gray-500" : ""
-                          }`}
+                      <div className="h-full min-h-fit border-b border-[#333537]">
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: `${contentLeft[tab?._id]}px`,
+                            transition: "left 0.3s ease",
+                            width: "100%", // Optional: Add a smooth transition
+                          }}
+                          className="flex items-center"
                         >
-                          {tab?.name}
-                        </p>
+                          <div className=" p-[2vw] py-[3.8vw]  flex items-center gap-[2vw]">
+                            {/* Your tab content goes here */}
+                            <input
+                              onChange={() =>
+                                handleStatusUpdate(
+                                  tab?._id,
+                                  tab?.isCompleted === false ? true : false
+                                )
+                              }
+                              type="checkbox"
+                              checked={tab?.isCompleted === true}
+                              name=""
+                              id=""
+                            />
+                            {tab?.isCompleted}
+                            <span>{index + 1}. </span>
+                            <p
+                              className={`w-[75vw] overflow-hidden h-[6vw] ${
+                                tab?.isCompleted
+                                  ? "line-through text-gray-500"
+                                  : ""
+                              }`}
+                            >
+                              {tab?.name}
+                            </p>
+                          </div>
+                        </div>
+
+                        {showActions[tab?._id] && (
+                          <div className="absolute right-0 flex items-center justify-center gap-3 h-[12.8vw] px-[4vw] rounded-md">
+                            <button
+                              onClick={() =>
+                                console.log(`Edit Tab ${tab?._id}`)
+                              }
+                            >
+                              <MdModeEdit className=" text-[4.6vw]" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                console.log(`Delete Tab ${tab?._id}`)
+                              }
+                            >
+                              <MdDelete className=" text-[4.6vw]" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {showActions[tab?._id] && (
-                      <div className="absolute right-0 flex items-center justify-center gap-3 h-[12.8vw] px-[4vw] rounded-md">
-                        <button
-                          onClick={() => console.log(`Edit Tab ${tab?._id}`)}
-                        >
-                          <MdModeEdit className=" text-[4.6vw]" />
-                        </button>
-                        <button
-                          onClick={() => console.log(`Delete Tab ${tab?._id}`)}
-                        >
-                          <MdDelete className=" text-[4.6vw]" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  ))}
+                </>
+              ) : (
+                <div className=" h-[80vw] flex items-center justify-center">
+                  <p className="text-gray-300">Empty task lists</p>
                 </div>
-              ))}
+              )}
             </>
-          ) : (
-            <div className=" h-[80vw] flex items-center justify-center">
-              <p className="text-gray-300">Empty task lists</p>
-            </div>
           )}
 
           {/* ---------------- swipe tabs------------- */}
         </div>
       </div>
       {/* --------- task container-------- */}
+
+      {/* -------------------Model--------------- */}
+      <div
+        className={` ${
+          isModelOpen ? "flex" : "hidden"
+        }  fixed top-0 left-0 h-screen w-[100vw] z-[10000000] backdrop-blur-sm  items-center justify-center`}
+      >
+        <form
+          onSubmit={handleSubmit(isEditing ? handleAddTask : handleCreateTask)}
+          ref={modelRef}
+          className="bg-[#2a2c2f] border border-white/10 w-[90vw] flex flex-col rounded-[3vw] p-[6vw] gap-3"
+        >
+          <p className=" text-start text-[5.5vw] font-semibold">
+            {isEditing ? "Edit Task" : "Add Primary Task"}
+          </p>
+          <Controller
+            name="taskNames"
+            control={control}
+            defaultValue={isEditing ? taskNames : ""}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                className="bg-transparent border rounded-[1vw] w-full p-[1.8vw]"
+                placeholder="1. Task Name..."
+                onChange={(e) => {
+                  setTaskNames(e.target.value.split(","));
+                  setValue("taskNames", e.target.value.split(","));
+                }}
+              />
+            )}
+          />
+
+          <div className="btns flex w-full justify-end gap-3">
+            <div
+              onClick={() => setIsModelOpen(false)}
+              className="p-2 px-4 bg-[#1f2123] rounded-[1vw] font-medium active:scale-95"
+            >
+              Cancle
+            </div>
+
+            {isEditing ? (
+              <>
+                {" "}
+                <button
+                  // onClick={isEditing ? handleUpdateTask : handleCreateTask}
+                  className="p-2 px-4 bg-[#1f2123] rounded-[1vw] font-medium active:scale-95"
+                >
+                  {isEditing ? "Update" : "Add"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleAddTask}
+                  className="p-2 px-4 bg-[#1f2123] rounded-[1vw] font-medium active:scale-95"
+                >
+                  Add
+                </button>
+              </>
+            )}
+          </div>
+        </form>
+      </div>
+      {/* -------------------Model--------------- */}
     </div>
   );
 };

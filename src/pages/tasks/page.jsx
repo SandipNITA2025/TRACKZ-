@@ -9,6 +9,7 @@ import { debounce } from "lodash";
 import { useAuth } from "../../context/authContext";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useForm, Controller } from "react-hook-form";
+import { LuLoader2 } from "react-icons/lu";
 
 const Task = () => {
   const [isModelOpen, setIsModelOpen] = useState(false);
@@ -233,7 +234,7 @@ const Task = () => {
             <div className="left">
               <div className="min-w-[28vw] text-[4.5vw] flex items-center gap-1 text-gray-200">
                 <RiTaskLine className="text-[5.3vw]" />
-                Primary Tasks
+                Set Tasks
               </div>
             </div>
             {/* ---------------heading------------ */}
@@ -250,72 +251,84 @@ const Task = () => {
           </div>
           <div className=" mt-[-.2vw] task-warpper flex flex-col px-[3vw] w-full min-h-full relative">
             {/* ---------------- swipe tabs------------- */}
-
-            {data?.task_names?.length > 0 ? (
+            {isLoading ? (
+              <div className="w-full h-[100vw] flex items-center justify-center gap-1">
+                <LuLoader2 className="animate-spin text-xl" /> Loading...
+              </div>
+            ) : (
               <>
-                {data?.task_names?.map((tab, index) => (
-                  <div
-                    key={tab?._id}
-                    onTouchStart={(e) => debouncedHandleTouchStart(tab?._id, e)}
-                    onTouchMove={(e) => debouncedHandleTouchMove(tab?._id, e)}
-                    onTouchEnd={() => debouncedHandleTouchEnd(tab?._id)}
-                    style={{
-                      position: "relative",
-                      marginBottom: "14vw", // Adjust the spacing between tabs
-                    }}
-                    className="h-[100%] w-full "
-                  >
-                    <div className="h-full min-h-fit border-b border-[#333537]">
+                {" "}
+                {data?.task_names?.length > 0 ? (
+                  <>
+                    {data?.task_names?.map((tab, index) => (
                       <div
+                        key={tab?._id}
+                        onTouchStart={(e) =>
+                          debouncedHandleTouchStart(tab?._id, e)
+                        }
+                        onTouchMove={(e) =>
+                          debouncedHandleTouchMove(tab?._id, e)
+                        }
+                        onTouchEnd={() => debouncedHandleTouchEnd(tab?._id)}
                         style={{
-                          position: "absolute",
-                          left: `${contentLeft[tab?._id]}px`,
-                          transition: "left 0.3s ease",
-                          width: "100%", // Optional: Add a smooth transition
+                          position: "relative",
+                          marginBottom: "14vw", // Adjust the spacing between tabs
                         }}
-                        className="flex items-center"
+                        className="h-[100%] w-full "
                       >
-                        <div className=" p-[2vw] py-[3.8vw]  flex items-center gap-[2vw]">
-                          {/* Your tab content goes here */}
-                          {/* <input type="checkbox" name="" id="" /> */}
-                          <span>{index + 1}. </span>
-                          <p className="w-[75vw] overflow-hidden h-[6vw]">
-                            {tab?.name}
-                          </p>
+                        <div className="h-full min-h-fit border-b border-[#333537]">
+                          <div
+                            style={{
+                              position: "absolute",
+                              left: `${contentLeft[tab?._id]}px`,
+                              transition: "left 0.3s ease",
+                              width: "100%", // Optional: Add a smooth transition
+                            }}
+                            className="flex items-center"
+                          >
+                            <div className=" p-[2vw] py-[3.8vw]  flex items-center gap-[2vw]">
+                              {/* Your tab content goes here */}
+                              {/* <input type="checkbox" name="" id="" /> */}
+                              <span>{index + 1}. </span>
+                              <p className="w-[75vw] overflow-hidden h-[6vw]">
+                                {tab?.name}
+                              </p>
+                            </div>
+                          </div>
+
+                          {showActions[tab?._id] && (
+                            <div className="absolute right-0 flex items-center justify-center gap-3 h-[12.8vw] px-[4vw] rounded-md">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // console.log(`Edit Tab ${tab?._id}`),
+                                  setIsEditing(true),
+                                    handleEditParticularTask(tab?._id);
+                                }}
+                              >
+                                <MdModeEdit className=" text-[4.6vw]" />
+                              </button>
+                              <button
+                                type="submit"
+                                onClick={() =>
+                                  // console.log(`Delete Tab ${tab?._id}`)
+                                  handleTaskDelete(tab?._id)
+                                }
+                              >
+                                <MdDelete className=" text-[4.6vw]" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      {showActions[tab?._id] && (
-                        <div className="absolute right-0 flex items-center justify-center gap-3 h-[12.8vw] px-[4vw] rounded-md">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // console.log(`Edit Tab ${tab?._id}`),
-                              setIsEditing(true),
-                                handleEditParticularTask(tab?._id);
-                            }}
-                          >
-                            <MdModeEdit className=" text-[4.6vw]" />
-                          </button>
-                          <button
-                            type="submit"
-                            onClick={() =>
-                              // console.log(`Delete Tab ${tab?._id}`)
-                              handleTaskDelete(tab?._id)
-                            }
-                          >
-                            <MdDelete className=" text-[4.6vw]" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className=" h-[80vw] flex items-center justify-center">
+                    <p className="text-gray-300">Empty task lists</p>
                   </div>
-                ))}
+                )}
               </>
-            ) : (
-              <div className=" h-[80vw] flex items-center justify-center">
-                <p className="text-gray-300">Empty task lists</p>
-              </div>
             )}
 
             {/* ---------------- swipe tabs------------- */}

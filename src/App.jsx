@@ -1,20 +1,17 @@
+import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Home from "./pages/home/page";
-import History from "./pages/history/page";
-import Task from "./pages/tasks/page";
-import Login from "./pages/auth/Login";
 import { useAuth } from "./context/authContext";
 import Navbar from "./components/Navbar/page";
-// import { RiLoader4Fill } from "react-icons/ri";
 import { TbLoader2 } from "react-icons/tb";
 
+// Lazy-loaded components
+const Home = lazy(() => import("./pages/home/page"));
+const History = lazy(() => import("./pages/history/page"));
+const Task = lazy(() => import("./pages/tasks/page"));
+const Login = lazy(() => import("./pages/auth/Login"));
+
 const App = () => {
-  const {
-    isAuthenticated,
-    isLoading,
-  } = useAuth();
-  // const isAuthenticated = true;
-  // const isLoading = true
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -29,24 +26,26 @@ const App = () => {
       {isAuthenticated === true && <Navbar />}{" "}
       {/* Show Navbar only if authenticated */}
       <div className="w-full mx-auto">
-        <Routes>
-          <Route
-            path="/"
-            element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/history"
-            element={isAuthenticated ? <History /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/task"
-            element={isAuthenticated ? <Task /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/login"
-            element={!isAuthenticated ? <Login /> : <Navigate to="/" />}
-          />
-        </Routes>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Routes>
+            <Route
+              path="/"
+              element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/history"
+              element={isAuthenticated ? <History /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/task"
+              element={isAuthenticated ? <Task /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/login"
+              element={!isAuthenticated ? <Login /> : <Navigate to="/" />}
+            />
+          </Routes>
+        </Suspense>
       </div>
     </div>
   );
