@@ -54,7 +54,7 @@ const Navbar = () => {
 
   console.log(user?.email);
   return (
-    <div className=" top-0 bg-[#151618] px-4 p-[5vw] w-full flex items-center justify-between z-[100]">
+    <div className=" top-0 bg-[#151618] px-4 p-[5vw] w-full flex items-center justify-between z-[100] sm:hidden">
       <Link to="/" className="left flex items-center justify-center gap-2">
         <img src="/48.webp" className="w-[6.5vw]" alt="" />
         <span className="uppercase text-[5vw] font-semibold">trackz</span>

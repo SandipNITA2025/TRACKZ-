@@ -22,10 +22,13 @@ const App = () => {
   }
 
   return (
-    <div className="w-full mx-auto">
+    <div className="w-full mx-auto ">
       {isAuthenticated === true && <Navbar />}{" "}
       {/* Show Navbar only if authenticated */}
-      <div className="w-full mx-auto">
+      <div className=" hidden sm:flex h-screen w-screen items-center justify-center">
+        Only Mobile Compatible
+      </div>
+      <div className="w-full mx-auto sm:hidden">
         <Suspense fallback={<div>Loading...</div>}>
           <Routes>
             <Route
