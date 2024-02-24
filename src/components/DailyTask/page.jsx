@@ -88,11 +88,7 @@ const DailyTask = () => {
 
   useEffect(() => {
     const updateDailyTask = async () => {
-      if (
-        primaryTasks > 0 &&
-        savedDate != currentDate &&
-        savedEmail != user?.email
-      ) {
+      if (primaryTasks > 0) {
         try {
           await axios.post(`${BASE_URL}/api/createDailyTask`, {
             user_email: user?.email,
