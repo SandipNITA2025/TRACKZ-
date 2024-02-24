@@ -74,21 +74,19 @@ const DailyTask = () => {
 
   // Effect to handle the API call when the date changes
 
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/getContantTask/${user?.email}`
+      );
+      // console.log(res?.data?.task_names?.length);
+      setPrimaryTasks(res?.data?.task_names?.length);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.get(
-          `${BASE_URL}/api/getContantTask/${user?.email}`
-        );
-        // console.log(res?.data?.task_names?.length);
-        setPrimaryTasks(res?.data?.task_names?.length);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
-
     const updateDailyTask = async () => {
       if (
         primaryTasks > 0 &&
@@ -109,7 +107,9 @@ const DailyTask = () => {
     };
 
     updateDailyTask();
-  }, [currentDate, user?.email, primaryTasks, savedEmail]);
+
+    fetchData();
+  }, []);
 
   // --------------- POST API----------------
 
